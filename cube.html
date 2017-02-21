@@ -10,16 +10,47 @@
 			var cubes = [
 						 [[1, 0, 0],
 						  [1, 1, 1]],
+						 [[1, 1, 1],
+							[1, 0, 0]],
 						 [[1, 1],
 						  [1, 1]],
 						 [[1, 1, 1, 1]],
 						 [[0, 1, 0],
-						  [1, 1, 1]] 
+						  [1, 1, 1]],
+						 [[1, 1, 0],
+							[0, 1, 1]],
+						 [[0, 1, 1],
+							[1, 1, 0]],
 						  ];
 			var map;
 			var cubeX, cubeY;
 			var color = ["rgba(10,10,10,0.2)", "rgba(50,50,50,1)", "rgba(90,90,90,1)"];
 			var ctx;
+			var counter = 0;
+			function ai(){
+				
+			}
+			function down(){
+				for(var i=0; i<cube.length; i++)
+					for(var j=0; j<cube[i].length; j++)
+						if(cube[i][j] == 1&&(map[cubeX+j][cubeY+1-cube.length+i]==1||cubeY+2-cube.length+i>=17))
+							return;
+				cubeY++;
+			}
+			function left(){
+				for(var i=0; i<cube.length; i++)
+					for(var j=0; j<cube[i].length; j++)
+						if(cube[i][j] == 1&&(map[cubeX+j-1][cubeY-cube.length+i]==1||cubeX+j-1<0))
+							return;
+				cubeX--;
+			}
+			function right(){
+				for(var i=0; i<cube.length; i++)
+					for(var j=0; j<cube[i].length; j++)
+						if(cube[i][j] == 1&&(map[cubeX+j+1][cubeY-cube.length+i]==1||cubeX+j+1>15))
+							return;
+				cubeX--;
+			}
 			function drawRect(i, j, type=0){
 				ctx.fillStyle = color[type];
 				ctx.fillRect(i*25+3, j*25+3, 19, 19);
@@ -34,33 +65,45 @@
 						column.push(0);
 					map.push(column);
 				}
-				map[1][1] = 2;
 			}
 			function createCube(){
 				hasCube = true;
-				cube = cubes[parseInt(Math.random()*4)];
+				cube = cubes[parseInt(Math.random()*7)];
 				cubeY = 0;
 				cubeX = 3;
+				ai();
 			}
 			function drop(){
+				cubeY++;
 				for(var i=0; i<15; i++)
 					for(var j=0;j<10;j++)
 						if(map[j][i]==2) map[j][i]=0;
 				for(var i=0; i<cube.length; i++){
 					for(var j=0; j<cube[i].length; j++){
-						if(cube[i][j] == 1&&map[cubeX+j][cubeY+1-cube.length+i]==1){
+						if(cube[i][j] == 1&&(map[cubeX+j][cubeY+1-cube.length+i]==1||cubeY+2-cube.length+i>=17)){
 							hasCube = false;
-							for(var i=0; i<15; i++)
-								for(var j=0;j<10;j++)
-									if(map[j][i]==2) map[j][i]=1;
+							for(var i=0; i<cube.length; i++)
+								for(var j=0;j<cube[i].length;j++)
+									if(cube[i][j]==1) map[cubeX+j][cubeY-cube.length+i]=1;
+							return;
 						}
-					}	
+					}
 				}
 				if(hasCube)
 					for(var i=0; i<cube.length; i++)
 						for(var j=0; j<cube[i].length; j++)
-							map[cubeX+j][cubeY-cube.length+i] = 2;
-				cubeY++;
+							if(cube[i][j] == 1)
+								map[cubeX+j][cubeY-cube.length+i] = 2;
+			}
+			function reverseCube(){
+				var f = new Array();
+				 for(var i=0; i<cube[0].length; i++){
+					 var temp = new Array();
+					 for(var j=cube.length-1; j>=0; j--)
+						 temp.push(cube[j][i]);
+						f.push(temp);
+				 }
+				 return f;
 			}
 			function disLine(){
 				for(var i=15; i>0; i--){
@@ -72,9 +115,9 @@
 						}
 					}
 					if(all==0){
-						for(var g=i; g>1; g++)
+						for(var g=i; g>0; g--)
 							for(var c=0; c<10; c++)
-								map[c][g] = map[c][g+1];
+								map[c][g] = map[c][g-1];
 						i++;
 					}
 				}
@@ -82,24 +125,28 @@
 			function logic(){
 				if(!hasCube){
 					createCube();
+					disLine();
 				}
 				drop();
-				disLine();
 			}
 			function onDraw(){
+				ctx.clearRect(0, 0, 250, 400);
 				for(var x=0; x<10; x++)
 					for(var y=0; y<16; y++)
 						drawRect(x, y, map[x][y]);
 			}
 			function animation(){
-				ctx.clearRect(0, 0, 250, 400);
-				logic();
 				onDraw();
-				setTimeout(animation, 500);
+				counter++;
+				if(counter == 10){
+					logic();
+					counter = 0;
+				}
+				setTimeout(animation, 25);
 			}
 			init();
 			animation();
-		</script>	
+		</script>
 	</body>
-	
+
 </html>

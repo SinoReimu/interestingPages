@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>pointToline</title>
+<script type="text/javascript" src="js/jquery.min.js"></script>
+</head>
+<body>
+  <canvas width="500px" height="500px" id="myCanvas"></canvas>
+  <label id="fps">FPS:</label>
+</body>
+<script>
+  var mouse=[0, 0];
+  var pointR = 2;
+  var lineWidth = 1;
+  var minGravityLength = 200;
+  var maxOutLength = 100;
+  var animatedWaveR = 0;
+  var speed = 0.8;
+  var minLength = 90;
+  var pointNumber = 80;
+  var point=[];
+  var time = -1;
+  var ctx;
+  document.onmousemove = mouseMove;
+  function mouseMove(ev){
+   ev = ev || window.event;
+   mouse[0] = ev.pageX;
+   mouse[1] = ev.pageY;
+  }
+  function drawLine(from, to, alpha=1){
+    ctx.strokeStyle = 'rgba(128, 128, 128, '+alpha+')';
+    ctx.beginPath();
+    ctx.moveTo(from[0], from[1]);
+    ctx.lineTo(to[0], to[1]);
+    ctx.stroke();
+  }
+  function drawWaveMain(main){
+    ctx.fillStyle = 'rgba(68, 68, 68, '+0.2+')';
+    ctx.beginPath();
+    ctx.arc(mouse[0], mouse[1], maxOutLength, 0, Math.PI*2, false);
+    ctx.fill();
+  }
+  function drawWaveOut(main){
+    animatedWaveR += 4;
+    if(animatedWaveR >= minGravityLength)
+      animatedWaveR = 0;
+    ctx.fillStyle = 'rgba(88, 88, 88, '+(0.7-animatedWaveR/minGravityLength)+')';
+    ctx.beginPath();
+    ctx.arc(mouse[0], mouse[1], animatedWaveR, 0, Math.PI*2, false);
+    ctx.fill();
+  }
+
+  function drawPoint(circle, alpha=1) {
+    ctx.fillStyle = 'rgba(168, 168, 168, '+alpha+')';
+    ctx.beginPath();
+    ctx.arc(circle[0], circle[1], pointR, 0, Math.PI*2, false);
+    ctx.fill();
+  }
+  function init(){
+    ctx=$("#myCanvas").get(0).getContext('2d');
+    ctx.lineWidth = lineWidth;
+    for(var i=0; i<pointNumber; i++){
+      point.push([Math.random()*500, Math.random()*500, (Math.random()-0.5)*2 , (Math.random()-0.5)*2, 50]);
+    }
+  }
+  function draw(){
+    point.sort(function(a, b){
+      return a[0]-b[0];
+    });
+    for(var i=0; i<point.length; i++){
+      var p = Math.random();
+      var q = Math.random();
+      if(Math.abs(point[i][0]-mouse[0]) < minGravityLength) {
+        if(Math.abs(point[i][1]-mouse[1]) < minGravityLength){
+          var leng = Math.sqrt(Math.pow(point[i][0]-mouse[0], 2)+Math.pow(point[i][1]-mouse[1], 2));
+          if(leng<minGravityLength) {
+            if((point[i][0]>=mouse[0] && leng > maxOutLength) || (point[i][0]<mouse[0] && leng <= maxOutLength))
+                p *= -1;
+            point[i][2] = p;
+            if((point[i][1]>=mouse[1] && leng > maxOutLength) || (point[i][1]<mouse[1] && leng <= maxOutLength))
+                q *= -1;
+            point[i][2] = p;
+            point[i][3] = q;
+          }
+        }
+      }
+      if(point[i][0]<-50||point[i][0]>550||point[i][1]<-50||point[i][1]>550){
+        point[i] = [Math.random()*500, Math.random()*500, (Math.random()-0.5)*2 , (Math.random()-0.5)*2, 0];
+        continue;
+      }
+      if(point[i][4] < 50) point[i][4]++;
+      drawPoint(point[i], point[i][4]/50);
+      for(var j=i; j<point.length; j++){
+        if(point[j][0]-point[i][0]>minLength) break;
+        var leng = Math.sqrt(Math.pow(point[j][0]-point[i][0], 2)+Math.pow(point[j][1]-point[i][1], 2));
+        if(leng<minLength) {
+          drawLine(point[i], point[j], Math.min(1-leng/minLength, point[i][4]/50, point[j][4]/50));
+        }
+      }
+    }
+  }
+  function calculateFPS(){
+    if(time == -1) time = new Date().getTime();
+    else {
+      var cur = new Date().getTime();
+      $("#fps").text("FPS:" + parseInt(1000/(cur-time)) + " x:" + mouse[0] + " y:" + mouse[1]);
+      time = cur;
+    }
+  }
+  function startAnimation(){
+    ctx.clearRect(0,0,500,500);
+    calculateFPS();
+    //drawWaveMain();
+    //drawWaveOut();
+    for(var i=0; i<point.length; i++){
+        point[i][0]+=point[i][2]*speed;
+        point[i][1]+=point[i][3]*speed;
+    }
+    draw();
+    setTimeout(startAnimation, 40);
+  }
+  init();
+  startAnimation();
+
+</script>
+</html>
